@@ -1,0 +1,13 @@
+# dependencies
+/node_modules
+
+# production
+/build
+
+# API key ห้ามขึ้น GitHub
+.env
+.env.*.local
+
+# misc
+.DS_Store
+npm-debug.log*
