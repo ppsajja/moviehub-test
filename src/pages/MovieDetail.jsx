@@ -1,16 +1,28 @@
+import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import ReviewForm from '../components/ReviewForm';
-import { movies } from '../data/data';
-// TODO ขั้นที่ 4: import { useEffect, useState } from 'react';
-// TODO ขั้นที่ 4: import { getMovie } from '../api/tmdb';
+import { getMovie } from '../api/tmdb';
 
 function MovieDetail() {
-  const { id } = useParams();                       // ได้เป็น string เสมอ
+  const { id } = useParams();                       // ได้เป็น string เสมอ (ตอนนี้คือรหัสของ TMDB)
+  const [movie, setMovie] = useState(null);
+  const [status, setStatus] = useState('loading');
+  const [error, setError] = useState(null);
 
-  // TODO ขั้นที่ 4: เปลี่ยนเป็น state 3 ตัว (movie, status, error) แล้วโหลดด้วย getMovie(id) ใน useEffect
-  const movie = movies.find(m => m.id === Number(id));
-  const status = movie ? 'success' : 'error';
-  const error = movie ? null : new Error('ไม่มีเรื่องนี้ใน data.js');
+  useEffect(() => {
+    let ignore = false;
+    async function load() {
+      setStatus('loading');
+      try {
+        const m = await getMovie(id);
+        if (!ignore) { setMovie(m); setStatus('success'); }
+      } catch (err) {
+        if (!ignore) { setError(err); setStatus('error'); }
+      }
+    }
+    load();
+    return () => { ignore = true; };
+  }, [id]);                                          // id เปลี่ยน = โหลดเรื่องใหม่
 
   if (status === 'loading') {
     return (
@@ -32,14 +44,14 @@ function MovieDetail() {
       <div className="mx-auto max-w-xl px-4 py-20 text-center">
         <p className="text-lg text-slate-700">ไม่พบหนังเรื่องนี้ 😢</p>
         <p className="text-sm text-slate-400">{error.message}</p>
-        <Link to="/movies" className="mt-6 inline-block text-sm text-emerald-600 hover:underline">กลับไปหน้าหนังทั้งหมด</Link>
+        <Link to="/movies" className="mt-6 inline-block text-sm text-slate-500 underline">กลับไปหน้าหนังทั้งหมด</Link>
       </div>
     );
   }
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-10 md:px-6">
-      <Link to="/movies" className="text-sm text-slate-500 hover:text-emerald-600">กลับไปหน้าหนังทั้งหมด</Link>
+      <Link to="/movies" className="text-sm text-slate-500 hover:text-slate-900">กลับไปหน้าหนังทั้งหมด</Link>
 
       <div className="mt-4 flex flex-col gap-8 md:flex-row">
         {movie.poster ? (
@@ -57,7 +69,7 @@ function MovieDetail() {
           </p>
           <p className="mt-4 leading-relaxed text-slate-700">{movie.detail}</p>
 
-          <div className="mt-8 rounded-xl border border-emerald-100 bg-white p-5">
+          <div className="mt-8 rounded-xl border border-slate-200 p-5">
             <ReviewForm key={movie.id} movieTitle={movie.title} />
           </div>
         </div>
