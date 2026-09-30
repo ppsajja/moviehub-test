@@ -51,7 +51,7 @@ function ApiLab() {
       <div className="mt-3 flex flex-wrap items-center gap-3 text-sm">
         <button onClick={() => run(getMovies)} disabled={status === 'loading'}
                 className="rounded-lg border border-emerald-200 bg-white px-4 py-2 text-emerald-700 hover:bg-emerald-50 disabled:text-slate-300">
-          getMovies() หนังกำลังฉาย ผ่าน cache รายวัน
+          getMovies() กำลังฉาย + ยอดนิยม 100 เรื่อง ผ่าน cache รายวัน
         </button>
         <button onClick={() => { forget(CACHE_KEY); setOutput('ล้าง cache แล้ว กดปุ่มด้านซ้ายอีกครั้งจะเห็นว่าใช้เวลานานขึ้น'); setStatus('idle'); setMs(null); }}
                 className="text-slate-500 underline hover:text-emerald-600">

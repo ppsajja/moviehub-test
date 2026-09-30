@@ -4,7 +4,8 @@ import { onceADay } from './cache';
 const BASE = 'https://api.themoviedb.org/3';
 const KEY = process.env.REACT_APP_TMDB_KEY;          // มาจากไฟล์ .env
 export const IMG = 'https://image.tmdb.org/t/p/w342'; // ต้นทางรูปโปสเตอร์
-export const CACHE_KEY = 'moviehub.movies';          // ชื่อกล่องใน localStorage
+export const CACHE_KEY = 'moviehub.movies.v2';       // ชื่อกล่องใน localStorage (v2: กำลังฉาย + ยอดนิยม 100 เรื่อง)
+export const MOVIE_LIMIT = 100;                      // จำนวนหนังทั้งหมดที่ getMovies() คืน
 
 // ตัวช่วยกลาง: ประกอบ URL, แนบ key, ส่ง request, เช็กผล, แปลงเป็น object
 export async function getJSON(path, params = {}) {
@@ -62,8 +63,8 @@ async function getGenreMap() {
 }
 
 // หนังที่กำลังฉายในไทย ดึงมาหลายหน้า (TMDB ให้หน้าละ 20 เรื่อง) แล้วต่อเป็น array เดียว
-export async function getNowPlaying(pages = 3) {
-  const genreMap = await getGenreMap();
+export async function getNowPlaying(pages = 3, genreMap) {
+  genreMap ??= await getGenreMap();                  // ส่งมาจากข้างนอกได้ จะได้ไม่โหลดซ้ำ
   const all = [];
   for (let page = 1; page <= pages; page++) {
     const data = await getJSON('/movie/now_playing', { region: 'TH', page });
@@ -74,10 +75,36 @@ export async function getNowPlaying(pages = 3) {
   return unique.map(m => toMovie(m, genreMap));
 }
 
+// หนังยอดนิยมในไทย ไล่ดึงทีละหน้าจนได้ครบ limit เรื่อง โดยข้ามเรื่องที่มี id อยู่ใน excludeIds
+export async function getPopular(limit, excludeIds = [], genreMap) {
+  genreMap ??= await getGenreMap();
+  const seen = new Set(excludeIds);
+  const picked = [];
+  for (let page = 1; picked.length < limit; page++) {
+    const data = await getJSON('/movie/popular', { region: 'TH', page });
+    for (const m of data.results) {
+      if (seen.has(m.id)) continue;                  // อยู่ใน now playing แล้ว หรือซ้ำข้ามหน้า
+      seen.add(m.id);
+      picked.push(toMovie(m, genreMap));
+      if (picked.length === limit) break;
+    }
+    if (page >= data.total_pages) break;
+  }
+  return picked;
+}
+
+// กำลังฉายขึ้นก่อน แล้วเติมหนังยอดนิยมที่ไม่ซ้ำจนครบ limit เรื่อง
+export async function getNowPlayingAndPopular(limit = MOVIE_LIMIT) {
+  const genreMap = await getGenreMap();
+  const nowPlaying = (await getNowPlaying(3, genreMap)).slice(0, limit);
+  const popular = await getPopular(limit - nowPlaying.length, nowPlaying.map(m => m.id), genreMap);
+  return [...nowPlaying, ...popular];
+}
+
 // "หนังทั้งหมดที่แอปใช้" โหลดจริงวันละครั้ง ที่เหลืออ่านจาก localStorage
 // หน้า Movies และหน้าแรกเรียกตัวนี้ จึงแชร์ข้อมูลชุดเดียวกัน
 export function getMovies() {
-  return onceADay(CACHE_KEY, () => getNowPlaying());
+  return onceADay(CACHE_KEY, () => getNowPlayingAndPopular());
 }
 
 // ค้นหาที่ server (ใช้ในหน้า API Lab เพื่อดู JSON ดิบ หน้า Movies กรองในเครื่องแทน)
