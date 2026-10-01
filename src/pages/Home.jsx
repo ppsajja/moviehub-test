@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { getMovies } from '../api/tmdb';
+//import { getMovies } from '../api/tmdb';
+import { getMovies } from '../api/backend';
 import { Link } from 'react-router-dom';
 import FeaturedCarousel from '../components/FeaturedCarousel';
 //import { movies as localMovies } from '../data/data';

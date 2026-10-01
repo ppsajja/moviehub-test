@@ -1,7 +1,8 @@
 import { useState } from 'react';
 
-// ฟอร์มรีวิว state 3 ตัว (review, error, status) ตามสูตรออกแบบ state ที่เรียนไปแล้ว
-function ReviewForm({ movieTitle }) {
+// ฟอร์มรีวิว state 3 ตัว (review, error, status) เหมือนเดิม
+// ที่เปลี่ยน: ไม่จำลอง server เองแล้ว รับฟังก์ชัน onSubmit(text) จากแม่ ซึ่งจะไปยิง POST จริง
+function ReviewForm({ movieTitle, onSubmit }) {
   const [review, setReview] = useState('');
   const [error, setError] = useState(null);
   const [status, setStatus] = useState('typing');   // 'typing' | 'submitting' | 'success'
@@ -15,20 +16,20 @@ function ReviewForm({ movieTitle }) {
     setStatus('submitting');
     setError(null);
     try {
-      await submitReview(review);   // วันนี้ยังจำลอง server ไว้ สัปดาห์หน้าเปลี่ยนเป็น fetch ไป backend ของทีม
+      await onSubmit(review);                      // แม่เป็นคนรู้ว่าจะส่งไปที่ไหน ฟอร์มไม่ต้องรู้
       setStatus('success');
     } catch (err) {
       setStatus('typing');
-      setError(err);
+      setError(err);                               // ข้อความ 400 / 401 / 409 จาก server
     }
   }
-
+  
   return (
     <form onSubmit={handleSubmit} className="space-y-3">
       <h3 className="font-medium text-slate-900">เขียนรีวิว {movieTitle}</h3>
       <textarea value={review} onChange={(e) => setReview(e.target.value)}
                 disabled={status === 'submitting'} rows={3}
-                placeholder="ดูแล้วรู้สึกอย่างไร..."
+                placeholder="ดูแล้วรู้สึกอย่างไร (อย่างน้อย 10 ตัวอักษร)"
                 className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 focus:border-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-100 disabled:bg-slate-50" />
       <div className="flex items-center gap-3">
         <button type="submit"
@@ -40,16 +41,6 @@ function ReviewForm({ movieTitle }) {
       </div>
     </form>
   );
-}
-
-// จำลอง server: รอ 1.5 วินาที ถ้าสั้นกว่า 10 ตัวอักษรให้ตอบกลับเป็น error
-function submitReview(text) {
-  return new Promise((resolve, reject) => {
-    setTimeout(() => {
-      if (text.trim().length < 10) reject(new Error('รีวิวสั้นเกินไป ลองเขียนอีกนิด'));
-      else resolve();
-    }, 1500);
-  });
 }
 
 export default ReviewForm;
