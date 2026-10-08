@@ -1,0 +1,19 @@
+# รันเทสต์อัตโนมัติทุกครั้งที่ push หรือเปิด pull request
+name: test
+
+on: [push, pull_request]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4                 # ดึงโค้ดของ commit นี้มา
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm                               # จำ node_modules ไว้ รอบหน้าเร็วขึ้น
+      - run: npm ci                                # ติดตั้งตาม package-lock เป๊ะ
+      - run: npm test -- --watchAll=false          # รันครั้งเดียวแล้วจบ ไม่ค้างรอพิมพ์
+      - run: npm run build                         # เช็กว่า build แบบเดียวกับ Vercel ผ่าน
+        env:
+          CI: true
