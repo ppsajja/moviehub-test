@@ -20,7 +20,8 @@ export async function apiFetch(path, { method = 'GET', body, token } = {}) {
   const data = await res.json()                              //    อ่านคำตอบเป็น JSON
     .catch(() => ({ error: 'server ไม่ได้ตอบเป็น JSON' }));
   if (!res.ok) {                                             // 4) 400 / 401 / 404 / 409 มาลงตรงนี้
-    const err = new Error(data.error || `server ตอบกลับ ${res.status}`);
+    //const err = new Error(data.error || `server ตอบกลับ ${res.status}`);
+    const err = new Error(data.error?.message ?? data.error ?? `server ตอบกลับ ${res.status}`);
     err.status = res.status;                                 //    แนบเลขไว้ให้หน้าเว็บใช้ต่อ
     throw err;
   }
